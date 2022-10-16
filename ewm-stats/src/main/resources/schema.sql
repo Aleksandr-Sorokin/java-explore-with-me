@@ -1,4 +1,4 @@
--- DROP TABLE IF EXISTS view_events, view_events_url;
+ DROP TABLE IF EXISTS view_events, view_events_url;
 
 CREATE TABLE IF NOT EXISTS view_events
 (

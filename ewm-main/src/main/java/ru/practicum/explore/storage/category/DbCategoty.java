@@ -34,18 +34,14 @@ public class DbCategoty implements CategoryStorage {
                 .usingGeneratedKeyColumns("category_id")
                 .executeAndReturnKeyHolder(Map.of("category_name", categoryDto.getName()))
                 .getKeys();
-        Category category = new Category();
-        category.setId((Long) keys.get("category_id"));
-        category.setName("category_name");
+        Category category = findById((Long) keys.get("category_id"));
         return category;
     }
 
     @Override
     public void delete(Long id) {
         String sql = "DELETE FROM category WHERE category_id = ?;";
-        jdbcTemplate.update(sql, ps -> {
-            ps.setLong(1, id);
-        });
+        jdbcTemplate.update(sql, id);
     }
 
     @Override

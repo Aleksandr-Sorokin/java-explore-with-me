@@ -73,9 +73,9 @@ public class DbEvent implements EventStorage {
         Connection connection = null;
         PreparedStatement statement = null;
         Event event = new Event();
-        boolean paid = false;
-        int participationLimit = 0;
-        boolean moderation = true;
+        Boolean paid = false;
+        Integer participationLimit = 0;
+        Boolean moderation = true;
         Long locationId = locationStorage.createLocation(eventDto.getLocation());
         if (eventDto.getPaid() != null) paid = eventDto.getPaid();
         if (eventDto.getParticipantLimit() != null) participationLimit = eventDto.getParticipantLimit();
@@ -291,15 +291,18 @@ public class DbEvent implements EventStorage {
                                                String sort, Integer from, Integer size) {
         StringBuilder sqlBuild = new StringBuilder();
         StringBuilder searchText = new StringBuilder();
-        searchText.append("%" + text + "%");
+        searchText.append("'%" + text + "%'");
         String searchQuery = searchText.toString();
         sqlBuild.append("SELECT * FROM events " +
-                "WHERE state_name = 'PUBLISHED' AND (event_annotation LIKE LOWER(?) OR event_description " +
-                "LIKE LOWER(?)) AND category_id IN (");
-        categories.stream().forEach(category -> sqlBuild.append("?,"));
-        sqlBuild.append(")");
-        sqlBuild.append(" AND paid = ? AND (event_date BETWEEN ? AND ? OR event_date > '" +
-                Timestamp.valueOf(LocalDateTime.now()) + "')");
+                "WHERE state_name = 'PUBLISHED' AND (LOWER(event_annotation) LIKE LOWER(?) OR LOWER(event_description) " +
+                "LIKE LOWER(?)) ");
+        if (categories.size() >= 1 && categories.get(0) != 0) {
+            sqlBuild.append("AND category_id IN (");
+            categories.stream().forEach(category -> sqlBuild.append("?,"));
+            sqlBuild.append(")");
+        }
+        sqlBuild.append(" AND paid = ? AND (event_date BETWEEN ? AND ? OR event_date >= '" +
+                Timestamp.valueOf(LocalDateTime.now()) + "') ");
         if (onlyAvailable) {
             sqlBuild.append("AND (participation_limit = 0 OR participation_limit - confirmed > 0) LIMIT ? OFFSET ?;");
         } else {
@@ -334,6 +337,11 @@ public class DbEvent implements EventStorage {
             if (sort.toUpperCase().equals("EVENT_DATE")) {
                 events.stream().sorted(((o1, o2) -> {
                     int result = o1.getEventDate().compareTo(o2.getEventDate());
+                    return result * -1;
+                })).collect(Collectors.toList());
+            } else {
+                events.stream().sorted(((o1, o2) -> {
+                    int result = o1.getViews().compareTo(o2.getViews());
                     return result * -1;
                 })).collect(Collectors.toList());
             }
@@ -402,7 +410,7 @@ public class DbEvent implements EventStorage {
     }
 
     public List<EventShortDto> findEventShortById(List<Long> eventId) {
-        if (eventId.get(0) != null) {
+        if (eventId.size() != 0) {
             StringBuilder sqlBuild = new StringBuilder();
             sqlBuild.append("SELECT * FROM events WHERE event_id IN (");
             eventId.stream().forEach(o -> sqlBuild.append("?,"));

@@ -12,6 +12,7 @@ import ru.practicum.explore.storage.event.participation.ParticipationStorage;
 import javax.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -43,21 +44,19 @@ public class EventServiceImpl implements EventService {
         List<EventShortDto> events = eventStorage.findFilterEvent(text, categories, paid,
                 rangeStart, rangeEnd, onlyAvailable,
                 sort, from, size);
-        StringBuilder stringBuilder = new StringBuilder();
-        events.stream().forEach(event -> stringBuilder.append(event.getId() + ","));
-        stringBuilder.append(")");
-        String param = stringBuilder.toString().replace(",)", "");
+        List<Long> eventId = new ArrayList<>();
+        events.stream().forEach(event -> eventId.add(event.getId()));
         Map<Long, Integer> eventsView = webClient.post()
                 .uri(uriBuilder -> uriBuilder
                         .path(API_PREFIX)
-                        .queryParam("eventId", param)
-                        .queryParam("http_address", request.getRequestURI())
-                        .queryParam("ip_address", request.getRemoteAddr())
+                        .queryParam("eventId", eventId)
+                        .queryParam("httpAddress", request.getRequestURI())
+                        .queryParam("ipAddress", request.getRemoteAddr())
                         .build())
                 .retrieve()
                 .bodyToMono(Map.class)
                 .block();
-        events.stream().forEach(event -> event.setViews(Integer.valueOf(eventsView.get(event.getId().toString()))));
+        events.stream().filter(eventShortDto -> !eventShortDto.equals(null)).forEach(event -> event.setViews(Integer.valueOf(eventsView.get(event.getId().toString()))));
         return events;
     }
 
@@ -77,8 +76,8 @@ public class EventServiceImpl implements EventService {
                 .uri(uriBuilder -> uriBuilder
                         .path(API_PREFIX + "/{eventId}")
                         //.query(String.valueOf(eventId))
-                        .queryParam("http_address", request.getRequestURI())
-                        .queryParam("ip_address", request.getRemoteAddr())
+                        .queryParam("httpAddress", request.getRequestURI())
+                        .queryParam("ipAddress", request.getRemoteAddr())
                         .build(eventId))
                 .retrieve()
                 .bodyToMono(Integer.class)

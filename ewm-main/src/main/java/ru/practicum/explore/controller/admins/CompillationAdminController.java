@@ -37,12 +37,12 @@ public class CompillationAdminController {
     }
 
     @DeleteMapping("/{compId}/pin")
-    public void deletePinCompilation(Long compId) {
+    public void deletePinCompilation(@PathVariable Long compId) {
         compilationService.deletePinCompilation(compId);
     }
 
     @PatchMapping("/{compId}/pin")
-    public void pinCompilation(Long compId) {
+    public void pinCompilation(@PathVariable Long compId) {
         compilationService.pinCompilation(compId);
     }
 }

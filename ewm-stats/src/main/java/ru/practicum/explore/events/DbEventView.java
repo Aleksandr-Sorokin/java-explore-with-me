@@ -2,24 +2,23 @@ package ru.practicum.explore.events;
 
 
 import io.micrometer.core.lang.Nullable;
+import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.sql.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 @Component
+@RequiredArgsConstructor
 public class DbEventView implements EventViewStorage {
-    private JdbcTemplate jdbcTemplate;
-
-    public DbEventView(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
-    public List<EventView> addEventView(List<Long> eventId, @Nullable String httpAddress, String ipAddress) {
+    public List<EventView> addEventView(List<Long> eventId, String httpAddress, String ipAddress) {
         LocalDateTime dateView = LocalDateTime.now();
         String sqlForUrl = "INSERT INTO view_events_url (event_id, date_view, http_address, ip_address) " +
                 "VALUES (?, ?, ?, ?);";
@@ -47,13 +46,18 @@ public class DbEventView implements EventViewStorage {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        StringBuilder sqlBuilder = new StringBuilder();
-        sqlBuilder.append("SELECT * FROM view_events WHERE event_id IN (");
-        eventId.stream().forEach(aLong -> sqlBuilder.append("?,"));
-        sqlBuilder.append(");");
-        String sql = sqlBuilder.toString().replace(",)", ")");
-        Collection<EventView> collection = jdbcTemplate.query(sql, this::makeEventView, eventId.toArray(Long[]::new));
-        return List.copyOf(collection);
+        List<EventView> views = new ArrayList<>();
+        if (eventId.size() > 0) {
+            StringBuilder sqlBuilder = new StringBuilder();
+            sqlBuilder.append("SELECT * FROM view_events WHERE event_id IN (");
+            eventId.stream().forEach(aLong -> sqlBuilder.append("?,"));
+            sqlBuilder.append(");");
+            String sql = sqlBuilder.toString().replace(",)", ")");
+            Collection<EventView> collection = jdbcTemplate.query(sql,
+                    this::makeEventView, eventId.toArray(Long[]::new));
+            views.addAll(collection);
+        }
+        return views;
     }
 
     private EventView makeEventView(ResultSet rs, int rowNum) throws SQLException {

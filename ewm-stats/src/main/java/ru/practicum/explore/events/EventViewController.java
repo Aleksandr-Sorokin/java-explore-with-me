@@ -14,7 +14,7 @@ public class EventViewController {
     private final EventViewService viewService;
 
     @PostMapping
-    public Map<Long, Integer> addEventView(@RequestParam List<Long> eventId,
+    public Map<Long, Integer> addEventView(@RequestParam(required = false) List<Long> eventId,
                                            @RequestParam(required = false) String httpAddress,
                                            @RequestParam(required = false) String ipAddress) {
         return viewService.addEventView(eventId, httpAddress, ipAddress);
