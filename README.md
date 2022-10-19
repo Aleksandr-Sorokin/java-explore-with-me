@@ -1,25 +1,5 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # java-explore-with-me
 
-Template repository for ExploreWithMe project.
 
 [Ссылка на пулл реквест](https://github.com/Aleksandr-Sorokin/java-explore-with-me/pull/1#issue-1410511693) для ревью
 
