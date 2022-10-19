@@ -45,7 +45,7 @@ public class DbLocation implements LocationStorage {
             location.setLat(rowSet.getFloat("latitude"));
             return location;
         } else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Локация отсутствует");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Локация отсутствует в базе");
         }
     }
 }
