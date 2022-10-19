@@ -6,8 +6,6 @@ import ru.practicum.explore.model.compilation.CompilationDto;
 import ru.practicum.explore.model.compilation.NewCompilationDto;
 import ru.practicum.explore.service.compilation.CompilationService;
 
-import java.sql.SQLException;
-
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin/compilations")
@@ -15,7 +13,7 @@ public class CompillationAdminController {
     public final CompilationService compilationService;
 
     @PostMapping
-    public CompilationDto createCompilation(@RequestBody NewCompilationDto compilationDto) throws SQLException {
+    public CompilationDto createCompilation(@RequestBody NewCompilationDto compilationDto) {
         return compilationService.createCompilation(compilationDto);
     }
 

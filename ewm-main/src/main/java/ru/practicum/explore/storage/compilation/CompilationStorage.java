@@ -13,13 +13,13 @@ public interface CompilationStorage {
 
     void deleteEventFromCompilation(Long compId, Long eventId);
 
-    void addEventForCompilation(Long compId, Long eventId);
+    void addEventForCompilation(Long compId, Long[] eventId) throws SQLException;
 
     void deletePinCompilation(Long compId);
 
     void pinCompilation(Long compId);
 
-    List<CompilationDto> findCompilations(Boolean pinned, Integer from, Integer size);
+    List<CompilationDto> findCompilations(Integer from, Integer size);
 
     CompilationDto findCompilationsById(Long compId);
 }

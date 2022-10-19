@@ -8,6 +8,5 @@ import javax.validation.constraints.NotBlank;
 public class Category {
     private Long id;
     @NotBlank(message = "Название не может быть пустым")
-    // часть тестов проходят только с названием переменной category_name
     private String name;
 }

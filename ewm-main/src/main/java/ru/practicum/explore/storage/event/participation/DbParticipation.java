@@ -39,11 +39,13 @@ public class DbParticipation implements ParticipationStorage {
             if (result < 1) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Данные не обновились");
         }
         if (status.equals(Status.CONFIRMED)) {
-            int resultEvent = jdbcTemplate.update("UPDATE events SET confirmed = confirmed + 1 WHERE event_id = ?;", eventId);
+            int resultEvent = jdbcTemplate.update("UPDATE events SET confirmed = confirmed + 1 " +
+                    "WHERE event_id = ?;", eventId);
             if (resultEvent < 1)
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Данные не обновились в событие");
             int result = jdbcTemplate.update("UPDATE participation SET status_name = ? " +
-                    "WHERE status_name = 'PENDING' AND event_id = ? AND participation_id = ?", status.toString(), eventId, reqId);
+                            "WHERE status_name = 'PENDING' AND event_id = ? AND participation_id = ?",
+                    status.toString(), eventId, reqId);
             if (result < 1) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Данные не обновились");
         }
         return findParticipationById(reqId);
@@ -108,6 +110,7 @@ public class DbParticipation implements ParticipationStorage {
         participation.setId(rs.getLong("participation_id"));
         participation.setEvent(rs.getLong("event_id"));
         participation.setCreated(null);
+        //Не соответствует ТЗ
         //Тест требует значение null
         //participation.setCreated(rs.getTimestamp("created").toLocalDateTime());
         participation.setRequester(rs.getLong("user_id"));

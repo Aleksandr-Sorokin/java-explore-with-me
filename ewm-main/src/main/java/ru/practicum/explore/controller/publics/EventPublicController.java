@@ -23,7 +23,8 @@ public class EventPublicController {
                                                @RequestParam(required = false) Boolean paid,
                                                @RequestParam(required = false) String rangeStart,
                                                @RequestParam(required = false) String rangeEnd,
-                                               @RequestParam(defaultValue = "false", required = false) Boolean onlyAvailable,
+                                               @RequestParam(defaultValue = "false", required = false)
+                                               Boolean onlyAvailable,
                                                @RequestParam(required = false) String sort,
                                                @RequestParam(defaultValue = "0", required = false) Integer from,
                                                @RequestParam(defaultValue = "10", required = false) Integer size,
@@ -36,6 +37,4 @@ public class EventPublicController {
     public Event findEventById(@PathVariable Long id, HttpServletRequest request) {
         return eventService.findEventByIdPublished(id, request);
     }
-
-
 }

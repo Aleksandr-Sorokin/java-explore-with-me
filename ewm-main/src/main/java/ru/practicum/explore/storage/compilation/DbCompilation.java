@@ -1,12 +1,10 @@
 package ru.practicum.explore.storage.compilation;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.explore.model.compilation.CompilationDto;
 import ru.practicum.explore.model.compilation.NewCompilationDto;
 import ru.practicum.explore.model.event.EventShortDto;
@@ -28,9 +26,7 @@ public class DbCompilation implements CompilationStorage {
     private final DbEvent dbEvent;
 
     @Override
-    public CompilationDto createCompilation(NewCompilationDto compilationDto) throws SQLException {
-        Connection connection;
-        PreparedStatement statement;
+    public CompilationDto createCompilation(NewCompilationDto compilationDto) {
         Map<String, Object> keys = new SimpleJdbcInsert(jdbcTemplate)
                 .withTableName("compilation")
                 .usingColumns("compilation_name", "pinned")
@@ -38,49 +34,39 @@ public class DbCompilation implements CompilationStorage {
                 .executeAndReturnKeyHolder(Map.of("compilation_name", compilationDto.getTitle(),
                         "pinned", compilationDto.getPinned()))
                 .getKeys();
-        if (compilationDto.getEvents().size() != 0) {
-            Long[] compilation = compilationDto.getEvents().stream().toArray(Long[]::new);
-            String sql = "INSERT INTO compilation_event (compilation_id, event_id) VALUES (?, ?);";
-            connection = jdbcTemplate.getDataSource().getConnection();
-            statement = connection.prepareStatement(sql);
+        CompilationDto compilations = new CompilationDto();
+        compilations.setId((Long) keys.get("compilation_id"));
+        compilations.setTitle(compilationDto.getTitle());
+        compilations.setPinned(compilationDto.getPinned());
+        compilations.setEvents(new ArrayList<>());
+        return compilations;
+    }
 
-            for (int i = 0; i < compilation.length; i++) {
-                statement.setLong(1, (Long) keys.get("compilation_id"));
-                statement.setLong(2, compilation[i]);
+    @Override
+    public void addEventForCompilation(Long compId, Long[] eventId) throws SQLException {
+        String sql = "INSERT INTO compilation_event (compilation_id, event_id) VALUES (?, ?) " +
+                "ON CONFLICT (compilation_id, event_id) DO NOTHING;";
+        try (Connection connection = jdbcTemplate.getDataSource().getConnection()) {
+            PreparedStatement statement = connection.prepareStatement(sql);
+            for (int i = 0; i < eventId.length; i++) {
+                statement.setLong(1, compId);
+                statement.setLong(2, eventId[i]);
                 statement.addBatch();
             }
             statement.executeBatch();
-            statement.close();
-            connection.close();
         }
-        return findCompilationsById((Long) keys.get("compilation_id"));
     }
 
     @Override
     public void deleteCompilation(Long compId) {
         String sql = "DELETE FROM compilation WHERE compilation_id = ?;";
-        int result = jdbcTemplate.update(sql, compId);
-        if (result < 1) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
+        jdbcTemplate.update(sql, compId);
     }
 
     @Override
     public void deleteEventFromCompilation(Long compId, Long eventId) {
         String sql = "DELETE FROM compilation_event WHERE compilation_id = ? AND event_id = ?;";
-        int result = jdbcTemplate.update(sql, compId, eventId);
-        if (result < 1) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-    }
-
-    @Override
-    public void addEventForCompilation(Long compId, Long eventId) {
-        String sql = "INSERT INTO compilation_event (compilation_id, event_id) VALUES (?, ?);";
-        int result = jdbcTemplate.update(sql, compId, eventId);
-        if (result < 1) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
+        jdbcTemplate.update(sql, compId, eventId);
     }
 
     @Override
@@ -96,9 +82,9 @@ public class DbCompilation implements CompilationStorage {
     }
 
     @Override
-    public List<CompilationDto> findCompilations(Boolean pinned, Integer from, Integer size) {
-        String sql = "SELECT * FROM compilation WHERE pinned = ? LIMIT ? OFFSET ?;";
-        SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql, pinned, size, from);
+    public List<CompilationDto> findCompilations(Integer from, Integer size) {
+        String sql = "SELECT * FROM compilation LIMIT ? OFFSET ?;";
+        SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql, size, from);
         List<CompilationDto> compilations = new ArrayList<>();
         while (rowSet.next()) {
             CompilationDto compilationDto = new CompilationDto();

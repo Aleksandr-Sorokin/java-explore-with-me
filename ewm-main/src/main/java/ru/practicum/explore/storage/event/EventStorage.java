@@ -11,7 +11,7 @@ public interface EventStorage {
 
     Event updateEventByUserId(Long userId, UpdateEventRequestDto eventDto);
 
-    Event createEvent(Long userId, NewEventDto eventDto) throws SQLException;
+    Event createEvent(Long userId, NewEventDto eventDto, Long idLocation) throws SQLException;
 
     Event findEventByEventIdAndUserId(Long userId, Long eventId);
 

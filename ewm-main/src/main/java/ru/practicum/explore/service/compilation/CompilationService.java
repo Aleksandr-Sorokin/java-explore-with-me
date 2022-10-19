@@ -3,11 +3,10 @@ package ru.practicum.explore.service.compilation;
 import ru.practicum.explore.model.compilation.CompilationDto;
 import ru.practicum.explore.model.compilation.NewCompilationDto;
 
-import java.sql.SQLException;
 import java.util.List;
 
 public interface CompilationService {
-    CompilationDto createCompilation(NewCompilationDto compilationDto) throws SQLException;
+    CompilationDto createCompilation(NewCompilationDto compilationDto);
 
     void deleteCompilation(Long compId);
 
@@ -19,7 +18,7 @@ public interface CompilationService {
 
     void pinCompilation(Long compId);
 
-    List<CompilationDto> findCompilations(Boolean pinned, Integer from, Integer size);
+    List<CompilationDto> findCompilations(Integer from, Integer size);
 
     CompilationDto findCompilationsById(Long compId);
 }

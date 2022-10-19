@@ -31,7 +31,7 @@ public class DbEventView implements EventViewStorage {
                 statement.setInt(2, 1);
                 statement.addBatch();
             }
-            int[] resultBatch = statement.executeBatch();
+            statement.executeBatch();
             statement.close();
             statement = connection.prepareStatement(sqlForUrl, Statement.RETURN_GENERATED_KEYS);
             for (int i = 0; i < eventId.size(); i++) {
@@ -41,7 +41,7 @@ public class DbEventView implements EventViewStorage {
                 statement.setString(4, ipAddress);
                 statement.addBatch();
             }
-            int[] resultBatchUrl = statement.executeBatch();
+            statement.executeBatch();
             statement.close();
         } catch (SQLException e) {
             throw new RuntimeException(e);

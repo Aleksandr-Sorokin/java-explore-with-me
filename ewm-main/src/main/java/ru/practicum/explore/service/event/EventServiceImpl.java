@@ -2,12 +2,14 @@ package ru.practicum.explore.service.event;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.explore.enums.State;
 import ru.practicum.explore.model.event.*;
 import ru.practicum.explore.storage.event.EventStorage;
 import ru.practicum.explore.storage.event.participation.ParticipationStorage;
+import ru.practicum.explore.storage.location.LocationStorage;
 
 import javax.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
@@ -17,14 +19,18 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+@Transactional(readOnly = true)
 public class EventServiceImpl implements EventService {
     private EventStorage eventStorage;
+    private LocationStorage locationStorage;
     private ParticipationStorage participationStorage;
     private static final String API_PREFIX = "/views";
     private WebClient webClient;
 
-    public EventServiceImpl(EventStorage eventStorage, ParticipationStorage participationStorage, WebClient webClient) {
+    public EventServiceImpl(EventStorage eventStorage, LocationStorage locationStorage,
+                            ParticipationStorage participationStorage, WebClient webClient) {
         this.eventStorage = eventStorage;
+        this.locationStorage = locationStorage;
         this.participationStorage = participationStorage;
         this.webClient = webClient;
     }
@@ -56,7 +62,8 @@ public class EventServiceImpl implements EventService {
                 .retrieve()
                 .bodyToMono(Map.class)
                 .block();
-        events.stream().filter(eventShortDto -> !eventShortDto.equals(null)).forEach(event -> event.setViews(Integer.valueOf(eventsView.get(event.getId().toString()))));
+        events.stream().filter(eventShortDto -> !eventShortDto.equals(null))
+                .forEach(event -> event.setViews(Integer.valueOf(eventsView.get(event.getId().toString()))));
         return events;
     }
 
@@ -92,6 +99,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional
     public Event updateEventByUserId(Long userId, UpdateEventRequestDto eventDto) {
         if (eventDto.getEventDate().isAfter(LocalDateTime.now().plusHours(2))) {
             return eventStorage.updateEventByUserId(userId, eventDto);
@@ -103,10 +111,12 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional
     public Event createEvent(Long userId, NewEventDto eventDto) {
         if (eventDto.getEventDate().isAfter(LocalDateTime.now().plusHours(2))) {
             try {
-                return eventStorage.createEvent(userId, eventDto);
+                Long idLocation = locationStorage.createLocation(eventDto.getLocation());
+                return eventStorage.createEvent(userId, eventDto, idLocation);
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
@@ -123,6 +133,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional
     public Event cancelEventBeforeModeration(Long userId, Long eventId) {
         return eventStorage.cancelEventBeforeModeration(userId, eventId);
     }
@@ -134,7 +145,8 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public Event editEvent(Long eventId, AdminUpdateEventRequest eventDto) throws SQLException {
+    @Transactional
+    public Event editEvent(Long eventId, AdminUpdateEventRequest eventDto) {
         Event event = eventStorage.findEventById(eventId);
         if (eventDto.getPaid() == null) eventDto.setPaid(event.getPaid());
         if (eventDto.getTitle() == null) eventDto.setTitle(event.getTitle());
@@ -145,15 +157,25 @@ public class EventServiceImpl implements EventService {
         if (eventDto.getParticipantLimit() == null) eventDto.setParticipantLimit(event.getParticipantLimit());
         if (eventDto.getRequestModeration() == null) eventDto.setRequestModeration(event.getRequestModeration());
         if (eventDto.getLocation() == null) eventDto.setLocation(event.getLocation());
-        return eventStorage.editEvent(eventId, eventDto);
+        try {
+            return eventStorage.editEvent(eventId, eventDto);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
-    public Event publishEvent(Long eventId) throws SQLException {
-        return eventStorage.publishEvent(eventId);
+    @Transactional
+    public Event publishEvent(Long eventId) {
+        try {
+            return eventStorage.publishEvent(eventId);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
+    @Transactional
     public Event rejectEvent(Long eventId) {
         return eventStorage.rejectEvent(eventId);
     }

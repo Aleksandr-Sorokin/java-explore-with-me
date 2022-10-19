@@ -21,9 +21,9 @@ public interface EventService {
     List<Event> searchEvent(List<Long> users, List<State> states, List<Long> categories,
                             String rangeStart, String rangeEnd, Integer from, Integer size);
 
-    Event editEvent(Long eventId, AdminUpdateEventRequest eventDto) throws SQLException;
+    Event editEvent(Long eventId, AdminUpdateEventRequest eventDto);
 
-    Event publishEvent(Long eventId) throws SQLException;
+    Event publishEvent(Long eventId);
 
     Event rejectEvent(Long eventId);
 

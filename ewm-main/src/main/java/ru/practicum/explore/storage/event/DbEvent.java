@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.explore.enums.State;
+import ru.practicum.explore.model.category.Category;
 import ru.practicum.explore.model.event.*;
 import ru.practicum.explore.service.user.UserMapper;
 import ru.practicum.explore.storage.category.CategoryStorage;
@@ -67,22 +68,18 @@ public class DbEvent implements EventStorage {
     }
 
     @Override
-    public Event createEvent(Long userId, NewEventDto eventDto) {
+    public Event createEvent(Long userId, NewEventDto eventDto, Long idLocation) {
         LocalDateTime createOn = LocalDateTime.now();
         Integer confirmed = 0;
-        Connection connection = null;
-        PreparedStatement statement = null;
         Event event = new Event();
         Boolean paid = false;
         Integer participationLimit = 0;
         Boolean moderation = true;
-        Long locationId = locationStorage.createLocation(eventDto.getLocation());
         if (eventDto.getPaid() != null) paid = eventDto.getPaid();
         if (eventDto.getParticipantLimit() != null) participationLimit = eventDto.getParticipantLimit();
         if (eventDto.getRequestModeration() != null) moderation = eventDto.getRequestModeration();
-        try {
-            connection = jdbcTemplate.getDataSource().getConnection();
-            statement = connection.prepareStatement(
+        try (Connection connection = jdbcTemplate.getDataSource().getConnection()) {
+            PreparedStatement statement = connection.prepareStatement(
                     "INSERT INTO events (event_title, event_annotation, event_description, " +
                             "category_id, created, publish, event_date, user_id, location_id, paid, " +
                             "participation_limit, moderation, state_name, confirmed) " +
@@ -95,7 +92,7 @@ public class DbEvent implements EventStorage {
             statement.setTimestamp(6, null);
             statement.setTimestamp(7, Timestamp.valueOf(eventDto.getEventDate()));
             statement.setLong(8, userId);
-            statement.setLong(9, locationId);
+            statement.setLong(9, idLocation);
             statement.setBoolean(10, paid);
             statement.setInt(11, participationLimit);
             statement.setBoolean(12, moderation);
@@ -122,18 +119,7 @@ public class DbEvent implements EventStorage {
                 }
             }
         } catch (SQLException e) {
-            e.getMessage();
-        } finally {
-            try {
-                connection.close();
-            } catch (SQLException e) {
-                e.getMessage();
-            }
-            try {
-                statement.close();
-            } catch (SQLException e) {
-                e.getMessage();
-            }
+            throw new RuntimeException(e);
         }
         return event;
     }
@@ -156,7 +142,7 @@ public class DbEvent implements EventStorage {
         int result = jdbcTemplate.update("UPDATE events SET state_name = 'CANCELED' " +
                 "WHERE state_name = 'PENDING' AND event_id = ? AND user_id = ?", eventId, userId);
         if (result < 1) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Статус не позволяет отсенить событие");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Статус не позволяет отменить событие");
         }
         return findEventById(eventId);
     }
@@ -274,7 +260,6 @@ public class DbEvent implements EventStorage {
         return List.copyOf(events).get(0);
     }
 
-    //доделать статистику количество просмотров и сохранить просмотр
     @Override
     public Event findEventByIdPublished(Long eventId) {
         Collection<Event> events = jdbcTemplate.query("SELECT * FROM events " +
@@ -284,18 +269,17 @@ public class DbEvent implements EventStorage {
         return List.copyOf(events).get(0);
     }
 
-    //Доделать статист получить просмотры и добавить в статистику еще просмотр
     @Override
     public List<EventShortDto> findFilterEvent(String text, List<Long> categories, Boolean paid,
                                                String rangeStart, String rangeEnd, Boolean onlyAvailable,
                                                String sort, Integer from, Integer size) {
         StringBuilder sqlBuild = new StringBuilder();
         StringBuilder searchText = new StringBuilder();
-        searchText.append("'%" + text + "%'");
+        searchText.append("%" + text + "%");
         String searchQuery = searchText.toString();
         sqlBuild.append("SELECT * FROM events " +
-                "WHERE state_name = 'PUBLISHED' AND (LOWER(event_annotation) LIKE LOWER(?) OR LOWER(event_description) " +
-                "LIKE LOWER(?)) ");
+                "WHERE state_name = 'PUBLISHED' " +
+                "AND (LOWER(event_annotation) LIKE LOWER(?) OR LOWER(event_description) LIKE LOWER(?)) ");
         if (categories.size() >= 1 && categories.get(0) != 0) {
             sqlBuild.append("AND category_id IN (");
             categories.stream().forEach(category -> sqlBuild.append("?,"));
@@ -353,12 +337,13 @@ public class DbEvent implements EventStorage {
 
     private Event makeEvent(ResultSet rs, int rowNum) {
         try {
+            Category category = categoryStorage.findById(rs.getLong("category_id"));
             Event event = new Event();
             event.setId(rs.getLong("event_id"));
             event.setTitle(rs.getString("event_title"));
             event.setAnnotation(rs.getString("event_annotation"));
             event.setDescription(rs.getString("event_description"));
-            event.setCategory(categoryStorage.findById(rs.getLong("category_id")));
+            event.setCategory(category);
             event.setCreatedOn(rs.getTimestamp("created").toLocalDateTime());
             if (rs.getTimestamp("publish") != null) {
                 event.setPublishedOn(rs.getTimestamp("publish").toLocalDateTime());
@@ -371,7 +356,7 @@ public class DbEvent implements EventStorage {
             event.setParticipantLimit(rs.getInt("participation_limit"));
             event.setState(getState(rs.getObject("state_name")));
             event.setConfirmedRequests(rs.getInt("confirmed"));
-            //event.setViews();
+            //event.setViews(); добавляется в сервисе
             return event;
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -389,7 +374,7 @@ public class DbEvent implements EventStorage {
             event.setInitiator(userMapper.toUserDto(userStorage.findUserById(rs.getLong("user_id"))));
             event.setPaid(rs.getBoolean("paid"));
             event.setConfirmedRequests(rs.getInt("confirmed"));
-            //event.setViews();
+            //event.setViews(); добавляется в сервисе
             return event;
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -425,9 +410,9 @@ public class DbEvent implements EventStorage {
     }
 
     @Override
-    public List<Event> findEventByIdCategory(Long categorytId) {
+    public List<Event> findEventByIdCategory(Long categoryId) {
         String sql = "SELECT * FROM events WHERE category_id = ?;";
-        Collection<Event> collection = jdbcTemplate.query(sql, this::makeEvent, categorytId);
+        Collection<Event> collection = jdbcTemplate.query(sql, this::makeEvent, categoryId);
         return List.copyOf(collection);
     }
 }

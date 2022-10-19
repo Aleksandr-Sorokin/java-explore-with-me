@@ -7,7 +7,6 @@ import ru.practicum.explore.model.event.AdminUpdateEventRequest;
 import ru.practicum.explore.model.event.Event;
 import ru.practicum.explore.service.event.EventService;
 
-import java.sql.SQLException;
 import java.util.List;
 
 @RestController
@@ -29,12 +28,12 @@ public class EventAdminController {
 
     @PutMapping("/{eventId}")
     public Event editEvent(@PathVariable Long eventId,
-                           @RequestBody AdminUpdateEventRequest eventDto) throws SQLException {
+                           @RequestBody AdminUpdateEventRequest eventDto) {
         return eventService.editEvent(eventId, eventDto);
     }
 
     @PatchMapping("/{eventId}/publish")
-    public Event publishEvent(@PathVariable Long eventId) throws SQLException {
+    public Event publishEvent(@PathVariable Long eventId) {
         return eventService.publishEvent(eventId);
     }
 

@@ -22,7 +22,7 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class DbCategoty implements CategoryStorage {
+public class DbCategory implements CategoryStorage {
     private final JdbcTemplate jdbcTemplate;
     private final CategoryMapper mapper;
 
@@ -53,7 +53,7 @@ public class DbCategoty implements CategoryStorage {
             category.setName(rowSet.getString("category_name"));
             return category;
         } else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Категория отсутствует");
+            return new Category();
         }
     }
 

@@ -2,6 +2,7 @@ package ru.practicum.explore.service.event.participation;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.explore.enums.State;
 import ru.practicum.explore.enums.Status;
@@ -13,6 +14,7 @@ import ru.practicum.explore.storage.event.participation.ParticipationStorage;
 import java.util.List;
 
 @Service
+@Transactional(readOnly = true)
 public class ParticipationServiceImpl implements ParticipationService {
     private ParticipationStorage participationStorage;
     private EventStorage eventStorage;
@@ -24,11 +26,11 @@ public class ParticipationServiceImpl implements ParticipationService {
 
     @Override
     public List<ParticipationRequestDto> findParticipationByEventIdAndUserId(Long userId, Long eventId) {
-        List<ParticipationRequestDto> ddd = participationStorage.findParticipationByEventIdAndUserId(userId, eventId);
-        return ddd;
+        return participationStorage.findParticipationByEventIdAndUserId(userId, eventId);
     }
 
     @Override
+    @Transactional
     public ParticipationRequestDto confirmParticipation(Long userId, Long eventId, Long reqId) {
         Event event = eventStorage.findEventById(eventId);
         if (event.getInitiator().getId().equals(userId)) {
@@ -42,8 +44,8 @@ public class ParticipationServiceImpl implements ParticipationService {
         }
     }
 
-    // отклонение чужой заявки в событии текущего пользователя
     @Override
+    @Transactional
     public ParticipationRequestDto rejectParticipation(Long userId, Long eventId, Long reqId) {
         return participationStorage.rejectParticipation(userId, eventId, reqId);
     }
@@ -60,6 +62,7 @@ public class ParticipationServiceImpl implements ParticipationService {
 //если для события отключена пре-модерация запросов на участие, то запрос должен автоматически перейти
 // в состояние подтвержденного
     @Override
+    @Transactional
     public ParticipationRequestDto createRequest(Long userId, Long eventId) {
         Event event = eventStorage.findEventById(eventId);
         List<ParticipationRequestDto> participation = participationStorage
@@ -72,7 +75,7 @@ public class ParticipationServiceImpl implements ParticipationService {
                 || (event.getParticipantLimit() - event.getConfirmedRequests()) > 0)) {
             Status status = Status.PENDING;
             if (event.getParticipantLimit() == 0) {
-                //Тест не соответствует заданию должен быть CONFIRMED а тест проверяет на PENDING
+                //Тест не соответствует ТЗ должен быть CONFIRMED а тест проверяет на PENDING
                 status = Status.PENDING;
             }
             return participationStorage.createRequest(userId, eventId, status);
@@ -82,6 +85,7 @@ public class ParticipationServiceImpl implements ParticipationService {
     }
 
     @Override
+    @Transactional
     public ParticipationRequestDto cancelRequest(Long userId, Long requestId) {
         return participationStorage.cancelRequest(userId, requestId);
     }

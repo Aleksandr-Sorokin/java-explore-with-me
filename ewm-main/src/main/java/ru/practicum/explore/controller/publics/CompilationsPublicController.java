@@ -14,10 +14,9 @@ public class CompilationsPublicController {
     private final CompilationService compilationService;
 
     @GetMapping
-    public List<CompilationDto> findCompilations(@RequestParam Boolean pinned,
-                                                 @RequestParam Integer from,
+    public List<CompilationDto> findCompilations(@RequestParam Integer from,
                                                  @RequestParam Integer size) {
-        return compilationService.findCompilations(pinned, from, size);
+        return compilationService.findCompilations(from, size);
     }
 
     @GetMapping("/{compId}")
