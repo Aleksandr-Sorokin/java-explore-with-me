@@ -4,6 +4,7 @@ import ru.practicum.explore.enums.State;
 import ru.practicum.explore.model.event.*;
 
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface EventStorage {
@@ -27,12 +28,12 @@ public interface EventStorage {
     Event rejectEvent(Long eventId);
 
     List<EventShortDto> findFilterEvent(String text, List<Long> categories, Boolean paid,
-                                        String rangeStart, String rangeEnd, Boolean onlyAvailable,
+                                        LocalDateTime rangeStart, LocalDateTime rangeEnd, Boolean onlyAvailable,
                                         String sort, Integer from, Integer size);
 
     Event findEventById(Long eventId);
 
     Event findEventByIdPublished(Long eventId);
 
-    List<Event> findEventByIdCategory(Long categorytId);
+    List<Event> findEventByIdCategory(Long categoryId);
 }

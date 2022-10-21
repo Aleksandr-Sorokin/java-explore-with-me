@@ -2,28 +2,32 @@ package ru.practicum.explore.events;
 
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.explore.events.model.EndpointHit;
+import ru.practicum.explore.events.model.ViewStats;
+import ru.practicum.explore.events.service.EventViewService;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(path = "/views")
+@RequestMapping
 public class EventViewController {
     private final EventViewService viewService;
 
-    @PostMapping
-    public Map<Long, Integer> addEventView(@RequestParam(required = false) List<Long> eventId,
-                                           @RequestParam(required = false) String httpAddress,
-                                           @RequestParam(required = false) String ipAddress) {
-        return viewService.addEventView(eventId, httpAddress, ipAddress);
+    @PostMapping("/hit")
+    public void addEventView(@RequestBody @Validated EndpointHit endpointHit) {
+        viewService.addEventView(endpointHit);
     }
 
-    @GetMapping("/{eventId}")
-    public Integer getEventViewById(@PathVariable Long eventId,
-                                    @RequestParam(required = false) String httpAddress,
-                                    @RequestParam(required = false) String ipAddress) {
-        return viewService.getEventViewById(eventId, httpAddress, ipAddress);
+    @GetMapping("/stats")
+    public List<ViewStats> getAppView(@RequestParam("start") @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startDate,
+                                      @RequestParam("end") @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endDate,
+                                      @RequestParam(required = false) List<String> uris,
+                                      @RequestParam(defaultValue = "false") Boolean unique) {
+        return viewService.getAppView(startDate, endDate, uris, unique);
     }
 }

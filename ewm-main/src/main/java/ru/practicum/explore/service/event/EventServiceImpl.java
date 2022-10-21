@@ -1,12 +1,16 @@
 package ru.practicum.explore.service.event;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
+import reactor.core.publisher.Mono;
 import ru.practicum.explore.enums.State;
 import ru.practicum.explore.model.event.*;
+import ru.practicum.explore.model.views.EndpointHit;
+import ru.practicum.explore.model.views.ViewStats;
 import ru.practicum.explore.storage.event.EventStorage;
 import ru.practicum.explore.storage.event.participation.ParticipationStorage;
 import ru.practicum.explore.storage.location.LocationStorage;
@@ -14,9 +18,8 @@ import ru.practicum.explore.storage.location.LocationStorage;
 import javax.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -24,15 +27,16 @@ public class EventServiceImpl implements EventService {
     private EventStorage eventStorage;
     private LocationStorage locationStorage;
     private ParticipationStorage participationStorage;
-    private static final String API_PREFIX = "/views";
     private WebClient webClient;
+    private ModelMapper mapper;
 
     public EventServiceImpl(EventStorage eventStorage, LocationStorage locationStorage,
-                            ParticipationStorage participationStorage, WebClient webClient) {
+                            ParticipationStorage participationStorage, WebClient webClient, ModelMapper mapper) {
         this.eventStorage = eventStorage;
         this.locationStorage = locationStorage;
         this.participationStorage = participationStorage;
         this.webClient = webClient;
+        this.mapper = mapper;
     }
 
     //это публичный эндпоинт, соответственно в выдаче должны быть только опубликованные события
@@ -45,25 +49,46 @@ public class EventServiceImpl implements EventService {
     // в сервисе статистики
     @Override
     public List<EventShortDto> findFilterEvent(String text, List<Long> categories, Boolean paid,
-                                               String rangeStart, String rangeEnd, Boolean onlyAvailable,
-                                               String sort, Integer from, Integer size, HttpServletRequest request) {
+                                               LocalDateTime rangeStart, LocalDateTime rangeEnd,
+                                               Boolean onlyAvailable, String sort, Integer from, Integer size,
+                                               HttpServletRequest request) {
         List<EventShortDto> events = eventStorage.findFilterEvent(text, categories, paid,
                 rangeStart, rangeEnd, onlyAvailable,
                 sort, from, size);
-        List<Long> eventId = new ArrayList<>();
-        events.stream().forEach(event -> eventId.add(event.getId()));
-        Map<Long, Integer> eventsView = webClient.post()
+        EndpointHit endpointHit = new EndpointHit();
+        endpointHit.setApp("ewm-main-service");
+        endpointHit.setIp(request.getRemoteAddr());
+        endpointHit.setUri(request.getRequestURI());
+        endpointHit.setTimestamp(LocalDateTime.now());
+        webClient.post()
+                .uri("/hit")
+                .body(Mono.just(endpointHit), EndpointHit.class)
+                .retrieve();
+        List<String> uriAddress = new ArrayList<>();
+        for (int i = 0; i < events.size(); i++) {
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append(request.getRequestURI() + "/" + events.get(i).getId());
+            uriAddress.add(stringBuilder.toString());
+        }
+        Mono<Object[]> responseViewStats = webClient
+                .get()
                 .uri(uriBuilder -> uriBuilder
-                        .path(API_PREFIX)
-                        .queryParam("eventId", eventId)
-                        .queryParam("httpAddress", request.getRequestURI())
-                        .queryParam("ipAddress", request.getRemoteAddr())
+                        .path("/stats")
+                        .queryParam("start", String.valueOf(rangeStart).replace("T", " "))
+                        .queryParam("end", String.valueOf(rangeEnd).replace("T", " "))
+                        .queryParam("uris", uriAddress)
+                        .queryParam("unique", false)
                         .build())
                 .retrieve()
-                .bodyToMono(Map.class)
-                .block();
-        events.stream().filter(eventShortDto -> !eventShortDto.equals(null))
-                .forEach(event -> event.setViews(Integer.valueOf(eventsView.get(event.getId().toString()))));
+                .bodyToMono(Object[].class);
+        Object[] objects = responseViewStats.block();
+        List<ViewStats> views = Arrays.stream(objects)
+                .map(o -> mapper.map(o, ViewStats.class)).collect(Collectors.toList());
+        Map<String, Integer> sumView = new HashMap<>();
+        views.stream().forEach(viewStats -> sumView.put(viewStats.getUri(), viewStats.getHits()));
+        events.stream()
+                .forEach(event -> event.setViews(sumView.get(
+                        new StringBuilder(request.getRequestURI() + "/" + event.getId()).toString())));
         return events;
     }
 
@@ -78,18 +103,34 @@ public class EventServiceImpl implements EventService {
     @Override
     public Event findEventByIdPublished(Long eventId, HttpServletRequest request) {
         Event event = eventStorage.findEventByIdPublished(eventId);
-        Integer eventView = webClient
+        EndpointHit endpointHit = new EndpointHit();
+        endpointHit.setApp("ewm-main-service");
+        endpointHit.setIp(request.getRemoteAddr());
+        endpointHit.setUri(new StringBuilder(request.getRequestURI() + "/" + eventId).toString());
+        endpointHit.setTimestamp(LocalDateTime.now());
+//        event.stream().forEach(event -> eventId.add(event.getId()));
+        webClient.post()
+                .uri("/hit")
+                .body(Mono.just(endpointHit), EndpointHit.class)
+                .retrieve();
+        /*Mono<Object[]> responseViewStats = webClient
                 .get()
                 .uri(uriBuilder -> uriBuilder
-                        .path(API_PREFIX + "/{eventId}")
+                        .path("/stats")
                         //.query(String.valueOf(eventId))
-                        .queryParam("httpAddress", request.getRequestURI())
-                        .queryParam("ipAddress", request.getRemoteAddr())
-                        .build(eventId))
+                        .queryParam("start", "2022-01-06%2013%3A30%3A38")
+                        .queryParam("end", "2097-09-06%2013%3A30%3A38")
+                        .queryParam("uris", request.getRequestURI())
+                        .build())
+                .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
-                .bodyToMono(Integer.class)
-                .block();
-        event.setViews(eventView);
+                .bodyToMono(Object[].class);
+        System.out.println("uris" + request.getRequestURI());
+        System.out.println(" ?????? !!!!!! responseViewStats " + responseViewStats);
+        Object[] objects = responseViewStats.block();
+        List<ViewStats> views = Arrays.stream(objects)
+                .map(o -> mapper.map(o, ViewStats.class)).collect(Collectors.toList());
+        event.setViews(views.get(0).getHits());*/
         return event;
     }
 

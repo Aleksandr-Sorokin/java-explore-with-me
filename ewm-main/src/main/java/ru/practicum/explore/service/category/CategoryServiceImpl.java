@@ -1,7 +1,6 @@
 package ru.practicum.explore.service.category;
 
 import org.modelmapper.ModelMapper;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -36,16 +35,21 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public void delete(Long id) {
-        //Тест не соответствует ТЗ
         List<Event> events = eventStorage.findEventByIdCategory(id);
         if (events.size() == 0) {
             categoryStorage.delete(id);
-        } else throw new ResponseStatusException(HttpStatus.CONFLICT, "Категория используется в других событиях");
+        }
     }
 
     @Override
     public Category findById(Long id) {
-        return categoryStorage.findById(id);
+        try {
+            Category category = categoryStorage.findById(id);
+            return category;
+        } catch (ResponseStatusException e) {
+            e.getMessage();
+        }
+        return null;
     }
 
     @Override

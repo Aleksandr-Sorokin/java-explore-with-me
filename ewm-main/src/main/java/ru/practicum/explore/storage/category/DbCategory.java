@@ -45,15 +45,15 @@ public class DbCategory implements CategoryStorage {
     }
 
     @Override
-    public Category findById(Long id) {
+    public Category findById(Long id) throws ResponseStatusException {
         SqlRowSet rowSet = jdbcTemplate.queryForRowSet("SELECT * FROM category WHERE category_id = ?", id);
+        Category category = new Category();
         if (rowSet.next()) {
-            Category category = new Category();
             category.setId(rowSet.getLong("category_id"));
             category.setName(rowSet.getString("category_name"));
             return category;
         } else {
-            return new Category();
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Event with id=" + id + " was not found.");
         }
     }
 

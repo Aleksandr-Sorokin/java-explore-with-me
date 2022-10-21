@@ -5,6 +5,7 @@ import ru.practicum.explore.model.event.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface EventService {
@@ -28,7 +29,7 @@ public interface EventService {
     Event rejectEvent(Long eventId);
 
     List<EventShortDto> findFilterEvent(String text, List<Long> categories, Boolean paid,
-                                        String rangeStart, String rangeEnd, Boolean onlyAvailable,
+                                        LocalDateTime rangeStart, LocalDateTime rangeEnd, Boolean onlyAvailable,
                                         String sort, Integer from, Integer size, HttpServletRequest request);
 
     Event findEventById(Long eventId);

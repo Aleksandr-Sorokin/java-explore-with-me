@@ -271,7 +271,7 @@ public class DbEvent implements EventStorage {
 
     @Override
     public List<EventShortDto> findFilterEvent(String text, List<Long> categories, Boolean paid,
-                                               String rangeStart, String rangeEnd, Boolean onlyAvailable,
+                                               LocalDateTime rangeStart, LocalDateTime rangeEnd, Boolean onlyAvailable,
                                                String sort, Integer from, Integer size) {
         StringBuilder sqlBuild = new StringBuilder();
         StringBuilder searchText = new StringBuilder();
@@ -337,7 +337,13 @@ public class DbEvent implements EventStorage {
 
     private Event makeEvent(ResultSet rs, int rowNum) {
         try {
-            Category category = categoryStorage.findById(rs.getLong("category_id"));
+            Category category;
+            try {
+                category = categoryStorage.findById(rs.getLong("category_id"));
+            } catch (ResponseStatusException e) {
+                throw new RuntimeException();
+            }
+
             Event event = new Event();
             event.setId(rs.getLong("event_id"));
             event.setTitle(rs.getString("event_title"));
@@ -358,6 +364,8 @@ public class DbEvent implements EventStorage {
             event.setConfirmedRequests(rs.getInt("confirmed"));
             //event.setViews(); добавляется в сервисе
             return event;
+        } catch (ResponseStatusException e) {
+            throw new RuntimeException(e);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
