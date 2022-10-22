@@ -28,6 +28,9 @@ public class CommentsServiceImpl implements CommentService {
     @Override
     @Transactional
     public CommentDto addComment(Comment comment) {
+        if (comment == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Пустой запрос");
+        }
         CommentDto commentDto = null;
         Event event = eventStorage.findEventById(comment.getEventId());
         User user = userStorage.findUserById(comment.getUserId());

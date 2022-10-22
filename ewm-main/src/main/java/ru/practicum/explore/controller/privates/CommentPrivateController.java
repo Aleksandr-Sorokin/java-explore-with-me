@@ -7,6 +7,7 @@ import ru.practicum.explore.model.comment.CommentDto;
 import ru.practicum.explore.service.comment.CommentService;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Positive;
 
 @RestController
 @RequiredArgsConstructor
@@ -20,7 +21,7 @@ public class CommentPrivateController {
     }
 
     @GetMapping("/{commentId}")
-    public CommentDto findCommentById(@PathVariable Long commentId) {
+    public CommentDto findCommentById(@PathVariable @Positive Long commentId) {
         return commentService.findCommentById(commentId);
     }
 

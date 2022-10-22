@@ -1,14 +1,21 @@
 package ru.practicum.explore.model.comment;
 
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
-@Data
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class Comment {
     Long id;
-    @NotBlank
+    @NotBlank() @Size(max = 2000)
     String text;
     @NotNull
     Long eventId;

@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.practicum.explore.model.comment.CommentDto;
 import ru.practicum.explore.service.comment.CommentService;
 
+import javax.validation.constraints.Positive;
 import java.util.List;
 
 @RestController
@@ -17,7 +18,7 @@ public class CommentPublicController {
     private final CommentService commentService;
 
     @GetMapping("/event/{eventId}")
-    public List<CommentDto> findCommentsByEventsId(@PathVariable Long eventId) {
+    public List<CommentDto> findCommentsByEventsId(@PathVariable @Positive Long eventId) {
         return commentService.findCommentsByEventsId(eventId);
     }
 }
