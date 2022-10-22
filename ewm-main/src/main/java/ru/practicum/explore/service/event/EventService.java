@@ -4,7 +4,6 @@ import ru.practicum.explore.enums.State;
 import ru.practicum.explore.model.event.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -13,7 +12,7 @@ public interface EventService {
 
     Event updateEventByUserId(Long userId, UpdateEventRequestDto eventDto);
 
-    Event createEvent(Long userId, NewEventDto eventDto) throws SQLException;
+    Event createEvent(Long userId, NewEventDto eventDto);
 
     Event findEventByEventIdAndUserId(Long userId, Long eventId);
 

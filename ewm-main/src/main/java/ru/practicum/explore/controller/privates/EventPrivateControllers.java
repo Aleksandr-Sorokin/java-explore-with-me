@@ -12,7 +12,6 @@ import ru.practicum.explore.service.event.EventService;
 import ru.practicum.explore.service.event.participation.ParticipationService;
 
 import javax.validation.constraints.Positive;
-import java.sql.SQLException;
 import java.util.List;
 
 @RestController
@@ -28,11 +27,7 @@ public class EventPrivateControllers {
         if (eventDto == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Событие не может быть пустым");
         }
-        try {
-            return eventService.createEvent(userId, eventDto);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        return eventService.createEvent(userId, eventDto);
     }
 
     @GetMapping
