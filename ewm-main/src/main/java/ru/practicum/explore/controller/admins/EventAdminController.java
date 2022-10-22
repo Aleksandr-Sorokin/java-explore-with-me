@@ -1,12 +1,15 @@
 package ru.practicum.explore.controller.admins;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.explore.enums.State;
 import ru.practicum.explore.model.event.AdminUpdateEventRequest;
 import ru.practicum.explore.model.event.Event;
 import ru.practicum.explore.service.event.EventService;
 
+import javax.validation.constraints.Positive;
 import java.util.List;
 
 @RestController
@@ -27,18 +30,21 @@ public class EventAdminController {
     }
 
     @PutMapping("/{eventId}")
-    public Event editEvent(@PathVariable Long eventId,
+    public Event editEvent(@PathVariable @Positive Long eventId,
                            @RequestBody AdminUpdateEventRequest eventDto) {
+        if (eventDto == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Событие не может быть пустым");
+        }
         return eventService.editEvent(eventId, eventDto);
     }
 
     @PatchMapping("/{eventId}/publish")
-    public Event publishEvent(@PathVariable Long eventId) {
+    public Event publishEvent(@PathVariable @Positive Long eventId) {
         return eventService.publishEvent(eventId);
     }
 
     @PatchMapping("/{eventId}/reject")
-    public Event rejectEvent(@PathVariable Long eventId) {
+    public Event rejectEvent(@PathVariable @Positive Long eventId) {
         return eventService.rejectEvent(eventId);
     }
 }

@@ -9,6 +9,7 @@ import ru.practicum.explore.model.event.EventShortDto;
 import ru.practicum.explore.service.event.EventService;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.constraints.Positive;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -40,7 +41,7 @@ public class EventPublicController {
     }
 
     @GetMapping("/{id}")
-    public Event findEventById(@PathVariable Long id, HttpServletRequest request) {
+    public Event findEventById(@PathVariable @Positive Long id, HttpServletRequest request) {
         return eventService.findEventByIdPublished(id, request);
     }
 }

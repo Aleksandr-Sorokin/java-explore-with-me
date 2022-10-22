@@ -1,7 +1,9 @@
 package ru.practicum.explore.controller.privates;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import ru.practicum.explore.model.event.Event;
 import ru.practicum.explore.model.event.NewEventDto;
 import ru.practicum.explore.model.event.UpdateEventRequestDto;
@@ -9,6 +11,7 @@ import ru.practicum.explore.model.event.participation.ParticipationRequestDto;
 import ru.practicum.explore.service.event.EventService;
 import ru.practicum.explore.service.event.participation.ParticipationService;
 
+import javax.validation.constraints.Positive;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -22,6 +25,9 @@ public class EventPrivateControllers {
     @PostMapping
     public Event createEvent(@PathVariable Long userId,
                              @RequestBody NewEventDto eventDto) {
+        if (eventDto == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Событие не может быть пустым");
+        }
         try {
             return eventService.createEvent(userId, eventDto);
         } catch (SQLException e) {
@@ -30,15 +36,18 @@ public class EventPrivateControllers {
     }
 
     @GetMapping
-    public List<Event> findEventByUserId(@PathVariable Long userId,
+    public List<Event> findEventByUserId(@PathVariable @Positive Long userId,
                                          @RequestParam(defaultValue = "0") Integer from,
                                          @RequestParam(defaultValue = "10") Integer size) {
         return eventService.findEventByUserId(userId, from, size);
     }
 
     @PatchMapping
-    public Event updateEvent(@PathVariable Long userId,
+    public Event updateEvent(@PathVariable @Positive Long userId,
                              @RequestBody UpdateEventRequestDto eventDto) {
+        if (eventDto == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Событие не может быть пустым");
+        }
         return eventService.updateEventByUserId(userId, eventDto);
     }
 

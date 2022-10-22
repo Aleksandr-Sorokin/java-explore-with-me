@@ -39,7 +39,6 @@ public class CompilationServiceImpl implements CompilationService {
         return compilation;
     }
 
-
     @Override
     @Transactional
     public void deleteCompilation(Long compId) {

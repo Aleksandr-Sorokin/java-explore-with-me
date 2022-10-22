@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.explore.model.category.Category;
 import ru.practicum.explore.service.category.CategoryService;
 
+import javax.validation.constraints.Positive;
 import java.util.List;
 
 @RestController
@@ -21,7 +22,7 @@ public class CategoryPublicController {
     }
 
     @GetMapping("/{catId}")
-    public Category findById(@PathVariable Long catId) {
+    public Category findById(@PathVariable @Positive Long catId) {
         return categoryService.findById(catId);
     }
 }

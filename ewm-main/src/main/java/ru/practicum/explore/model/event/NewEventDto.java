@@ -6,15 +6,19 @@ import ru.practicum.explore.model.location.Location;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
 
 @Data
 public class NewEventDto {
     @NotBlank
+    @Size(max = 200)
     private String title;
     @NotBlank
+    @Size(max = 1000)
     private String annotation; // Краткое описание
     @NotBlank
+    @Size(max = 2000)
     private String description;  // Полное описание события
     @NotNull
     private Long category;

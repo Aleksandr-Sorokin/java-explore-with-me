@@ -4,13 +4,17 @@ import lombok.Data;
 import ru.practicum.explore.enums.State;
 import ru.practicum.explore.model.location.Location;
 
+import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
 
 @Data
 public class EventFullForAdminUpdate {
     private Long id;
+    @Size(max = 200)
     private String title;
+    @Size(max = 1000)
     private String annotation; // Краткое описание
+    @Size(max = 2000)
     private String description;  // Полное описание события
     private Long category;
     private Integer confirmedRequests; // Количество одобренных заявок на участие в данном событии

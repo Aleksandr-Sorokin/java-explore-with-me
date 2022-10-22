@@ -4,17 +4,21 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
 
 @Data
 public class EndpointHit {
-    Long id;
+    private Long id;
     @NotBlank
-    String app;
+    @Size(max = 2000)
+    private String app;
     @NotBlank
-    String uri;
+    @Size(max = 2000)
+    private String uri;
     @NotBlank
-    String ip;
+    @Size(max = 250)
+    private String ip;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    LocalDateTime timestamp;
+    private LocalDateTime timestamp;
 }

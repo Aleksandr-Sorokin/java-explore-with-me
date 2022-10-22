@@ -108,29 +108,10 @@ public class EventServiceImpl implements EventService {
         endpointHit.setIp(request.getRemoteAddr());
         endpointHit.setUri(new StringBuilder(request.getRequestURI() + "/" + eventId).toString());
         endpointHit.setTimestamp(LocalDateTime.now());
-//        event.stream().forEach(event -> eventId.add(event.getId()));
         webClient.post()
                 .uri("/hit")
                 .body(Mono.just(endpointHit), EndpointHit.class)
                 .retrieve();
-        /*Mono<Object[]> responseViewStats = webClient
-                .get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/stats")
-                        //.query(String.valueOf(eventId))
-                        .queryParam("start", "2022-01-06%2013%3A30%3A38")
-                        .queryParam("end", "2097-09-06%2013%3A30%3A38")
-                        .queryParam("uris", request.getRequestURI())
-                        .build())
-                .accept(MediaType.APPLICATION_JSON)
-                .retrieve()
-                .bodyToMono(Object[].class);
-        System.out.println("uris" + request.getRequestURI());
-        System.out.println(" ?????? !!!!!! responseViewStats " + responseViewStats);
-        Object[] objects = responseViewStats.block();
-        List<ViewStats> views = Arrays.stream(objects)
-                .map(o -> mapper.map(o, ViewStats.class)).collect(Collectors.toList());
-        event.setViews(views.get(0).getHits());*/
         return event;
     }
 
