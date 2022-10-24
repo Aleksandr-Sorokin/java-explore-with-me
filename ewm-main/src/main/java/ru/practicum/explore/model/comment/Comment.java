@@ -14,11 +14,11 @@ import javax.validation.constraints.Size;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Comment {
-    Long id;
+    private Long id;
     @NotBlank() @Size(max = 2000)
-    String text;
+    private String text;
     @NotNull
-    Long eventId;
+    private Long eventId;
     @NotNull
-    Long userId;
+    private Long userId;
 }

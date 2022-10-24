@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class CommentDto {
-    String text;
-    String eventTitle;
-    String userName;
+    private String text;
+    private String eventTitle;
+    private String userName;
 }
