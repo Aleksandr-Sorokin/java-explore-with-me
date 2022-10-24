@@ -115,7 +115,7 @@ public class DbEvent implements EventStorage {
                     event.setInitiator(userStorage.findUserById(userId));
                     event.setState(PENDING);
                 } else {
-                    throw new SQLException("Ошибка, нет сгенертрованного id");
+                    throw new SQLException("Ошибка, нет сгенерированного id");
                 }
             }
         } catch (SQLException e) {

@@ -45,7 +45,7 @@ public class DbCategory implements CategoryStorage {
     }
 
     @Override
-    public Category findById(Long id) throws ResponseStatusException {
+    public Category findById(Long id) {
         SqlRowSet rowSet = jdbcTemplate.queryForRowSet("SELECT * FROM category WHERE category_id = ?", id);
         Category category = new Category();
         if (rowSet.next()) {
